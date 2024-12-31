@@ -1,0 +1,54 @@
+# Copyright 2001-2024 Sourcefire, Inc. All Rights Reserved.
+#
+# This file contains (i) proprietary rules that were created, tested and certified by
+# Sourcefire, Inc. (the "VRT Certified Rules") that are distributed under the VRT
+# Certified Rules License Agreement (v 2.0), and (ii) rules that were created by
+# Sourcefire and other third parties (the "GPL Rules") that are distributed under the
+# GNU General Public License (GPL), v2.
+# 
+# The VRT Certified Rules are owned by Sourcefire, Inc. The GPL Rules were created
+# by Sourcefire and other third parties. The GPL Rules created by Sourcefire are
+# owned by Sourcefire, Inc., and the GPL Rules not created by Sourcefire are owned by
+# their respective creators. Please see http://www.snort.org/snort/snort-team/ for a
+# list of third party owners and their respective copyrights.
+# 
+# In order to determine what rules are VRT Certified Rules or GPL Rules, please refer
+# to the VRT Certified Rules License Agreement (v2.0).
+#
+#-------------
+# LOCAL RULES
+#-------------
+
+alert tcp $EXTERNAL_NET 80 -> $HOME_NET any (msg:"Attack attempt!"; Flow:to_client,established; File_data; content:"1337 hackz 1337",fast_pattern,nocase; service:http; sid:1; )
+alert tcp any any -> 192.168.29.109 80 (msg:"HTTP Traffic Detected"; flow:to_server,established; sid:100002;)
+alert tcp any any -> any 21 (flow:to_server,established; \content:"root"; pcre:"/user\s+root/i";sid:100003;)
+alert tcp any any -> any 80 (msg:"Potential harassment detected - complex phrases"; content:"harass"; pcre:"/harass(ment|ing|er)?|bully|threat/i"; nocase; http_uri; sid:2000001; rev:1;)
+alert tcp any any -> any 80 (msg:"Repeated harassment detected"; content:"harass"; threshold:type both, track by_src, count 5, seconds 60; sid:2000002; rev:1;)
+alert tcp any any -> any 80 (msg:"Harassment detected - multiple keywords"; content:"bully"; content:"threat"; distance:0; within:100; sid:2000003; rev:1;)
+alert tcp any any -> any 443 (msg:"Suspicious activity in TLS certificate"; ssl_state:client_hello; content:"inappropriate.com"; sid:2000004; rev:1;)
+alert tcp any any -> any 25 (msg:"Harassment detected - email content"; content:"Subject:"; pcre:"/Subject:.*(bully|threat|abuse)/i"; sid:2000005; rev:1;)
+alert tcp any any -> any 80 (msg:"Suspicious file upload detected"; content:"POST"; http_method; content:"filename="; pcre:"/filename=.*(threatening|offensive).(txt|jpg|png)/i"; sid:2000006; rev:1;)
+alert tcp any any -> any any (msg:"Session-based harassment detection"; flow:to_server,established; content:"harass"; nocase; sid:2000007; rev:1;)
+alert tcp any any -> any 80 (msg:"Repeated harassment attempt"; content:"bully"; threshold:type limit, track by_src, count 3, seconds 60; sid:1000005; rev:1;)
+alert tcp any any -> any 80 (msg:"Potential harassment detected"; content:"offensive"; pcre:"/harass(ment|ing)?/i"; sid:1000004; rev:1;)
+alert tcp any any -> any 443 (msg:"Weak cipher suite detected"; ssl_state:server_hello; content:"\x00\x2F"; sid:3000001; rev:1;)
+alert tcp any any -> any 443 (msg:"Null cipher detected"; ssl_state:server_hello; content:"\x00\x00"; sid:3000002; rev:1;)
+alert tcp any any -> any 443 (msg:"Potential cipher downgrade attack"; ssl_state:client_hello; content:"\x56\x00"; pcre:"/SSL 3.0/i"; sid:3000003; rev:1;)
+alert tcp any any -> any 443 (msg:"TLS Heartbleed attack detected"; content:"\x18\x03\x02"; content:"\x01\x00\x40\x00"; distance:3; within:4; sid:3000004; rev:1;)
+alert tcp any any -> any 443 (msg:"BEAST attack detected"; flow:established,to_server; content:"\x00\x35"; pcre:"/TLS_DHE_RSA_WITH_AES_256_CBC_SHA/i"; sid:3000005; rev:1;)
+alert tcp any any -> any 443 (msg:"Padding oracle attack detected"; content:"\x15\x03\x01\x00\x02"; content:"\x02\x28"; distance:5; sid:3000006; rev:1;)
+alert tcp any any -> any 443 (msg:"Logjam attack detected"; ssl_state:server_key_exchange; content:"\x01\x00\x00\xff"; pcre:"/DHE_EXPORT/i"; sid:3000007; rev:1;)
+alert tcp any any -> any 443 (msg:"SWEET32 attack detected"; content:"\x00\x0A"; pcre:"/TLS_RSA_WITH_3DES_EDE_CBC_SHA/i"; sid:3000008; rev:1;)
+alert tcp any any -> any 443 (msg:"Weak export cipher detected"; ssl_state:server_hello; pcre:"/EXPORT/i"; sid:3000009; rev:1;)
+alert tcp any any -> any 443 (msg:"Suspicious RSA key size detected"; ssl_state:certificate; content:"\x82\x01"; pcre:"/RSA key size:.*<2048/i"; sid:3000010; rev:1;)
+alert tcp any any -> any 445 (msg:"Ransomware note detected"; content:"README.txt"; nocase; flow:to_server,established; sid:4000002; rev:1;)
+alert tcp any any -> any 445 (msg:"Ransomware file renaming detected"; pcre:"/.*\.(docx|pdf|xls)$/.*\.(encrypted|locky|crypted)$/"; sid:4000003; rev:1;)
+alert tcp any any -> any 445 (msg:"Mass file operations detected - potential ransomware"; content:"WRITE"; flow:to_server,established; threshold:type both, track by_src, count 50, seconds 10; sid:4000004; rev:1;)
+alert tcp any any -> any 80 (msg:"Known ransomware C2 traffic detected"; content:"/api/v1/encrypt"; http_uri; sid:4000005; rev:1;)
+alert tcp any any -> any any (msg:"Suspicious encryption library detected"; content:"libcrypto.so"; nocase; sid:4000006; rev:1;)
+alert tcp any any -> any 445 (msg:"Suspicious registry modification detected"; content:"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run"; nocase; sid:4000007; rev:1;)
+alert tcp any any -> any any (msg:"Suspicious ransomware keyword detected"; content:"decrypt"; nocase; sid:4000008; rev:1;)
+alert tcp any any -> any 5985 (msg:"Suspicious PowerShell command detected"; content:"-enc"; nocase; sid:4000010; rev:1;)
+alert ip any any -> any any (msg:"High volume traffic detected - potential ransomware"; flow:to_server,established; threshold:type both, track by_src, count 1000, seconds 30; sid:4000009; rev:1;)
+alert tcp any any -> any 5985 (msg:"Suspicious PowerShell command detected"; content:"-enc"; nocase; sid:4000010; rev:1;)
+
